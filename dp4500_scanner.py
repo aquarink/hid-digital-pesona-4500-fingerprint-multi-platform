@@ -136,6 +136,20 @@ class DigitalPersona4500:
                 pass
         return False
 
+    def wait_for_finger_off(self, timeout_sec=5):
+        """Menunggu jari diangkat dari sensor"""
+        self.set_mode(MODE_AWAIT_FINGER_OFF)
+        start_time = time.time()
+        while time.time() - start_time < timeout_sec:
+            try:
+                irq = self.dev.read(0x81, 64, timeout=200)
+                irq_type = (irq[0] << 8) | irq[1]
+                if irq_type == IRQ_FINGER_OFF:
+                    return True
+            except usb.core.USBTimeoutError:
+                pass
+        return False
+
     def capture_image(self) -> Image.Image:
         """Mengambil citra sidik jari dari sensor"""
         # Aktifkan mode capture
