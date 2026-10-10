@@ -33,11 +33,11 @@ def main():
         scanner.connect()
         print("      Berhasil terhubung!")
         
-        print("\n[2/3] LAMPU MERAH MENYALA! Tempelkan jari Anda ke scanner sekarang...")
-        finger_detected = scanner.wait_for_finger(timeout_sec=20)
+        print("\n[2/3] LAMPU MERAH MENYALA! Tempelkan jari Anda ke scanner sekarang (waktu 45 detik)...")
+        finger_detected = scanner.wait_for_finger(timeout_sec=45)
         
         if not finger_detected:
-            print("\n[!] Waktu habis (20 detik): Tidak ada jari yang ditempelkan.")
+            print("\n[!] Waktu habis (45 detik): Tidak ada jari yang ditempelkan.")
             scanner.set_mode(0x70)
             return
 
