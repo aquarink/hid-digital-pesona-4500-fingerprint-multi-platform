@@ -11,3 +11,5 @@ fingerprint.png
 fingerprint_ascii.txt
 fingerprint_base64.txt
 scans/
+enrolled_images/
+users_db.json

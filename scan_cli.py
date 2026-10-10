@@ -5,6 +5,7 @@ import base64
 from io import BytesIO
 from datetime import datetime
 from dp4500_scanner import DigitalPersona4500
+from fingerprint_matcher import FingerprintDatabase
 
 def image_to_ascii(img, width=60):
     """Mengubah gambar sidik jari menjadi teks ASCII agar bisa dilihat di text editor"""
@@ -25,9 +26,20 @@ def image_to_ascii(img, width=60):
 
 def main():
     print("=" * 65)
-    print(" DIGITALPERSONA 4500 - CONTINUOUS FINGERPRINT SCANNER ")
+    print(" DIGITALPERSONA 4500 - FINGERPRINT IDENTIFICATION SYSTEM ")
     print("=" * 65)
-    print("Scanner akan terus menyala & siaga membaca setiap kali jari ditempelkan.")
+    
+    db = FingerprintDatabase()
+    total_users = len(db.users)
+    print(f"[*] Database: {total_users} user terdaftar.")
+    if total_users == 0:
+        print("[!] Tips: Database masih kosong. Anda bisa mendaftarkan user")
+        print("    dengan menjalankan: python3 enroll.py")
+    else:
+        for u in db.list_users():
+            print(f"    - ID: {u['id']:<10} | Nama: {u['name']}")
+
+    print("\nScanner akan terus menyala & siaga mengenali sidik jari.")
     print("Tekan Ctrl + C di terminal untuk keluar.\n")
     
     scanner = DigitalPersona4500()
@@ -43,43 +55,57 @@ def main():
             print("-" * 65)
             print(f"[IDLE #{scan_count}] LAMPU MENYALA: Silakan tempelkan jari ke scanner...")
             
-            # Tunggu sentuhan jari tanpa batas (looping per 60 detik agar tetap responsif)
             finger_detected = False
             while not finger_detected:
                 finger_detected = scanner.wait_for_finger(timeout_sec=60)
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            print(f"[*] Jari terdeteksi pada {datetime.now().strftime('%H:%M:%S')}! Mengambil gambar...")
+            time_str = datetime.now().strftime("%H:%M:%S")
+            print(f"[*] Jari terdeteksi pada {time_str}! Mengambil citra...")
             
             img = scanner.capture_image()
             
-            # 1. Simpan ke fingerprint.png (dan arsip history di folder scans/)
+            # 1. Simpan gambar dan Base64
             os.makedirs("scans", exist_ok=True)
             archive_path = f"scans/fingerprint_{timestamp}.png"
             img.save("fingerprint.png")
             img.save(archive_path)
             
-            # 2. Simpan Base64 ke TXT
             buffered = BytesIO()
             img.save(buffered, format="PNG")
             b64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
             with open("fingerprint_base64.txt", "w") as f:
                 f.write(f"data:image/png;base64,{b64_str}")
             
-            # 3. Simpan ASCII Art ke TXT
             ascii_art = image_to_ascii(img, width=80)
             with open("fingerprint_ascii.txt", "w") as f:
                 f.write(f"=== HASIL SCAN #{scan_count} ({timestamp}) ===\n\n")
                 f.write(ascii_art)
-            
-            print(f"[OK] Gambar disimpan: fingerprint.png (arsip: {archive_path})")
-            print(f"[OK] Base64 disimpan: fingerprint_base64.txt")
-            print(f"[OK] ASCII Art disimpan: fingerprint_ascii.txt")
-            
-            print("\nPreview Mini:")
-            print(image_to_ascii(img, width=50))
-            
-            # Tunggu sampai jari diangkat agar tidak langsung scan dobel
+
+            # 2. PROSES PENCOCOKAN KE DATABASE (IDENTIFIKASI BIOMETRIK)
+            print("[*] Memeriksa kecocokan biometrik ke database...")
+            user, score, good_matches = db.identify(img)
+
+            if user:
+                print("\n" + "=" * 65)
+                print("🎯 IDENTIFIKASI BERHASIL! (MATCH FOUND)")
+                print("=" * 65)
+                print(f"  ID User      : {user['id']}")
+                print(f"  Nama Lengkap : {user['name']}")
+                print(f"  Skor Cocok   : {score:.1f}% ({good_matches} titik biometrik identik)")
+                print(f"  Waktu Absen  : {time_str}")
+                print("=" * 65)
+            else:
+                print("\n" + "=" * 65)
+                print("⚠️  SIDIK JARI TIDAK DIKENALI! (UNKNOWN USER)")
+                print("=" * 65)
+                if good_matches > 0:
+                    print(f"  Kemiripan tertinggi hanya {good_matches} titik (belum mencapai ambang batas).")
+                print("  Jari ini belum terdaftar di database.")
+                print("  Gunakan 'python3 enroll.py' untuk mendaftarkan user ini.")
+                print("=" * 65)
+
+            # Tunggu sampai jari diangkat dari sensor
             print("[*] Menunggu jari diangkat dari sensor...")
             scanner.wait_for_finger_off(timeout_sec=5)
             time.sleep(0.5)

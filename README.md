@@ -43,18 +43,37 @@ Menyalakan lampu sensor merah selama 5 detik untuk memastikan komunikasi USB ber
 python3 test_led.py
 ```
 
-### 2. Pengambilan Sidik Jari (CLI Scanner)
-Menyalakan sensor, mendeteksi sentuhan jari, mengambil gambar sidik jari, dan mengekspor hasilnya:
+### 2. Pendaftaran User & ID Baru (Enrollment)
+Mendaftarkan sidik jari dengan ID dan Nama ke database lokal:
+```bash
+python3 enroll.py
+```
+Ikuti instruksi di terminal:
+1. Masukkan ID User (misal: `EMP-001` atau `001`)
+2. Masukkan Nama Lengkap
+3. Tempelkan jari ke scanner saat lampu merah menyala. Template biometrik akan tersimpan di `users_db.json`.
+
+### 3. Pengenalan & Identifikasi Otomatis (Continuous Recognition)
+Scanner siaga terus menerus. Setiap kali ada jari yang ditempelkan, sistem akan otomatis mencocokkan ke database dan mengeluarkan nama & ID pemiliknya:
 ```bash
 python3 scan_cli.py
 ```
 
-Hasil scan akan tersimpan otomatis:
-- `fingerprint.png`
-- `fingerprint_ascii.txt`
-- `fingerprint_base64.txt`
+Jika sidik jari cocok:
+```text
+🎯 IDENTIFIKASI BERHASIL! (MATCH FOUND)
+ID User      : EMP-001
+Nama Lengkap : Budi
+Skor Cocok   : 94.2% (142 titik biometrik identik)
+```
 
-### 3. Melihat Hasil di Browser
+Jika belum terdaftar:
+```text
+⚠️  SIDIK JARI TIDAK DIKENAL! (UNKNOWN USER)
+Gunakan 'python3 enroll.py' untuk mendaftarkan user ini.
+```
+
+### 4. Melihat Hasil di Browser
 Buka file `viewer.html` di browser (Chrome/Edge/Safari/Firefox) untuk melihat gambar hasil scan.
 
 ## Lisensi
