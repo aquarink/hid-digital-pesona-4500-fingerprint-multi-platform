@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.venv/
+venv/
+*.log
+
+# Scanned output files
+fingerprint.png
+fingerprint_ascii.txt
+fingerprint_base64.txt
